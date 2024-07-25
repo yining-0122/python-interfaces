@@ -32,15 +32,19 @@ def Default_input_paras(): # This function defines the default parameters for in
     field_default_paras['dgrid']    =   2.00000e-4
     field_default_paras['ngrid']    =   255
     field_default_paras['waist_size']    =   30e-6
+    field_default_paras['importfield']            =   0
+    field_default_paras['importfield_filename']   =   ""
     
     beam_default_paras  =   {}
-    beam_default_paras['current']   =   200
-    beam_default_paras['delgam']    =   0
+    beam_default_paras['current']           =   200
+    beam_default_paras['delgam']            =   0
     beam_default_paras['betax']             =   0.0036
     beam_default_paras['betay']             =   0.0036
     beam_default_paras['alphax']            =   0
     beam_default_paras['alphay']            =   0
-    beam_default_paras['bunch']     =   0.2
+    beam_default_paras['bunch']             =   0.2
+    beam_default_paras['importbeam']            =   0
+    beam_default_paras['importbeam_filename']   =   ""
 
     return setup_default_paras, lattice_default_paras, field_default_paras, beam_default_paras
 
@@ -111,15 +115,34 @@ def Inputfile_make(input_filename,setup_paras,lattice_paras,field_paras,beam_par
             file.write("%s = %s\n"%(str(key),str(value)))
         file.write("&end\n\n")
 
-        file.write("&field\n") 
-        for key,value in field_input_paras.items():
-            file.write("%s = %s\n"%(str(key),str(value)))
-        file.write("&end\n\n")  
+        
+        if (field_input_paras['importfield'] == 0) :  
+            field_input_paras.pop('importfield')
+            field_input_paras.pop('importfield_filename')
+            file.write("&field\n") 
+            for key,value in field_input_paras.items():
+                file.write("%s = %s\n"%(str(key),str(value)))
+            file.write("&end\n\n")  
+        elif (field_input_paras['importfield'] == 1) :
+            file.write("&importfield\n")
+            file.write("%s = %s\n" %("file",field_input_paras['importfield_filename']))
+            file.write("&end\n\n")  
+        else:
+            print("\033[0;31m Error \033[0m: The field import parameter should be True or False")
 
-        file.write("&beam\n") 
-        for key,value in beam_input_paras.items():
-            file.write("%s = %s\n"%(str(key),str(value)))
-        file.write("&end\n\n") 
+        if (beam_input_paras['importbeam'] == 0) :
+            beam_input_paras.pop('importbeam')
+            beam_input_paras.pop('importbeam_filename')
+            file.write("&beam\n") 
+            for key,value in beam_input_paras.items():
+                    file.write("%s = %s\n"%(str(key),str(value)))
+            file.write("&end\n\n")
+        elif (beam_input_paras['importbeam'] == 1)  :
+            file.write("&importbeam\n")
+            file.write("%s = %s\n" %("file",beam_input_paras['importbeam_filename']))
+            file.write("&end\n\n")  
+        else:
+            print("\033[0;31m Error \033[0m: The beam import parameter should be True or False")
 
         file.write("&track\n") 
         file.write("&end\n") 
@@ -219,7 +242,7 @@ beam_paras = {}
 beamline_paras = {}
 
 setup_paras['lattice']  =   lattice_filename 
-beamline_paras['UND_nwig'] = 35
+beamline_paras['UND_nwig'] = 1
 
 emitx = 1e-6
 emity = 1e-6
@@ -229,12 +252,18 @@ beam_paras['betax']   = sigmax**2/emitx
 beam_paras['betay']   = sigmay**2/emity
 beam_paras['alphax']    =   0
 beam_paras['alphay']    =   0
-beam_paras['bunch'] = 0.20
+beam_paras['bunch'] = 0.50
 
 field_paras['power'] = 0.1e7
 
-seed_power = 0.1e7
-nperiod = 1
+field_paras['importfield']  =   0
+field_paras['importfield_filename'] =   inputpath + 'Input.31.fld.h5'
+beam_paras['importbeam']    =   0
+beam_paras['importbeam_filename']   =   inputpath + 'Input.31.par.h5'
+
+
+seed_power = 10e5
+nperiod = 30
 
 gamma_out_s = []
 power_out_s = []
@@ -249,33 +278,16 @@ aw_out = 1.9
 power_out = 0
 bunching_out = 0.20
 
-hid = h5py.File(inputpath + 'Input.1099.par.h5','r')
-slice = 1
-slc = 'slice%6.6d' % slice
-x = hid[slc]
-print(x.keys())
-
-
-
-
-
-'''
 for index in range(nperiod):
 
     print('\033[0;31m Run: %d / %d \033[0m'%(index+1,nperiod))
     if index==0: 
-        power_out = field_paras['power']
-        bunching_out = beam_paras['bunch']
-    field_paras['power'] = power_out
-    setup_paras['gamma0'] = gamma_out
-    beamline_paras['UND_aw'] = aw_out
-    beam_paras['bunch'] = bunching_out
-    #beam_paras['betax']   = betax_out
-    #beam_paras['betay']   = betay_out
-    #beam_paras['alphax']    =   alphax_out
-    #beam_paras['alphay']    =   alphay_out
-    #beam_paras['delgam']  =   gammaspread_out
-
+        field_paras['importfield']  =  0
+        beam_paras['importbeam']  =   0
+    else:
+        field_paras['importfield']  =   1
+        beam_paras['importbeam']  =   1
+    
     # Step Three. Make input and lattice files.
     inputfile_input_paras = Inputfile_make(input_filename,setup_paras,lattice_paras,field_paras,beam_paras)
     beamline_input_paras = Latticefile_make(lattice_filename,beamline_paras)
@@ -307,9 +319,7 @@ for index in range(nperiod):
     b = hid['Beam']['bunching'][()]
     current = hid['Beam']['current'][()][0,:]
     energy = hid['Beam']['energy'][()]
-    print(delgam)
-    print(betax)
-    print(alphax)
+    
 
     fx = hid['Field']['xsize'][()]
     fy = hid['Field']['ysize'][()]
@@ -318,7 +328,7 @@ for index in range(nperiod):
     phi = hid['Field']['phase-farfield'][()]
     freq = hid['Global']['frequency'][()]
 
-    print(hid['Beam'].keys())
+    #print(hid['Beam'].keys())
 
     setup_paras_load = inputfile_input_paras[0]
     gamma_out = energy[-1,0]
@@ -345,7 +355,7 @@ out_dict = {'period':period_out_s,'z':z_out_s,'gamma':gamma_out_s,'power':power_
 Output_save(output_filename,out_dict)
 
 
-plt.figure(figsize=(15,10))
+plt.figure(figsize=(20,10))
 plt.subplot(6,1,1)
 plt.scatter(z_out_s,gamma_out_s)
 plt.xlabel("z[m]")
@@ -372,8 +382,6 @@ plt.xlabel("z[m]")
 plt.ylabel("$bunching$")
 plt.savefig("%s/savefig/%s_one_by_one.png"%(inputpath,simulation_paras['date']+'_'+simulation_paras['hour']+'_'+simulation_paras['minute']+'_'+simulation_paras['second']))
 plt.show()
-
-'''
 
 
 # For particle and field dumps
@@ -411,4 +419,18 @@ ax2.semilogy(z,energy,color = color)
 plt.savefig("%s/savefig/%s_bunching_and_radiation.png"%(inputpath,simulation_paras['date']+'_'+simulation_paras['hour']+'_'+simulation_paras['minute']+'_'+simulation_paras['second']))
 plt.show()
 hid.close()
+
+
+
+field_paras['power'] = power_out
+    setup_paras['gamma0'] = gamma_out
+    beamline_paras['UND_aw'] = aw_out
+    beam_paras['bunch'] = bunching_out
+    #beam_paras['betax']   = betax_out
+    #beam_paras['betay']   = betay_out
+    #beam_paras['alphax']    =   alphax_out
+    #beam_paras['alphay']    =   alphay_out
+    #beam_paras['delgam']  =   gammaspread_out
+
 '''
+
