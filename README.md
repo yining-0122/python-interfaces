@@ -47,8 +47,19 @@ Use ```YGPT_run.GptRun()``` to run the simulation. A 'beep' sound will notify yo
 
 For post-processing, use ```YGPT_process.processing()```Refer to the comments for detailed instructions. The timestamp and simulated parameters will be saved by ```YGPT_file.save_database(database_dict)```.
 
-## MR optimizer
+## 1.2 MR optimizer
 
 To use the MR optimizer, call ```YGPT_file.opt()``` and ```YGPT_file.output_opt()``` to write the scanning file. Then, use YGPT_run.GptOpt() instead of ```YGPT_run.GptRun()``` to execute the run. 
 
+# 2. Python-Genesis
+
+We use the interface to run Genesis, specifically for tapering undulator. To achieve this goal, we want to run the undulator simulation one period by one period. The beama dn field profile will be directly imported by the following period, while the ```aw``` and ```gamma0``` will be calculated according to the output and sent to next period. 
+
+To start the simulation, use ```Default_input_paras()``` and ```Default_lattice_paras()``` to write the default parameters for input and lattice file, respectively. Then call ```Inputfile_make()``` to make the input file. You can write the beamline in ```Lattice_compile()```, for example
+
+```asm
+lattice_elements['UND'] = "UNDULATOR={lambdau=%f,nwig=%d,aw=%f,helical=%s}"%(beamline_input_paras['UND_lambdau'],beamline_input_paras['UND_nwig'],beamline_input_paras['UND_aw'],beamline_input_paras['UND_helical'])
+```
+
+defines an undulator with label 'UND'. After finishing this, use ```Latticefile_make()``` to make the lattice file.  
 
