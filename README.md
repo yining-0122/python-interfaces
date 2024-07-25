@@ -74,7 +74,7 @@ We use the interface to run Genesis, specifically for tapering undulator. To ach
 
 To start the simulation, use ```Default_input_paras()``` and ```Default_lattice_paras()``` to write the default parameters for input and lattice file, respectively. For example,  
 
-```
+```asm
 setup_default_paras['lambda0'] = 3.3e-6
 setup_default_paras['gamma0']   =   146.771
 ```
@@ -87,7 +87,7 @@ lattice_elements['UND'] = "UNDULATOR={lambdau=%f,nwig=%d,aw=%f,helical=%s}"%(bea
 
 defines an undulator with label 'UND'. After finishing this, use ```Latticefile_make()``` to make the lattice file.  
 
-Go tot the main function. You should write down all the paths first. Then you can define your parameters. You can change parameters in the main function, while the ones not mentioned will be your default number. To maintain the self-consistency, all parameters changed here should have a valid key in the default sets. Otherwise, the update will not be excuted. For example, you write 
+Go tot the main function. You should write down all the paths first. Then you can define your parameters. You can change parameters in the main function, while the ones not mentioned will be your default number.  Otherwise, the update will not be excuted. For example, you write 
 
 ```asm
 setup_paras = {}
@@ -98,7 +98,7 @@ setup_default_paras['lambda0'] = 5e-6
 inputfile_input_paras = Inputfile_make(input_filename,setup_paras,lattice_paras,field_paras,beam_paras)
 ```
 
-Then the ```lambda0``` value will be updated to 5e-6. Other parameters like ```gamma0``` not mentioned in the main function will keep the value as 146.771. The empty dictionary lattice_paras{} or so gives no updated to the default lattice parameters. 
+Then the ```lambda0``` value will be updated to 5e-6. ```gamma0``` is defined above but not mentioned here, therefore it will keep the value as 146.771. The empty dictionary lattice_paras{} or so gives no updated to the default lattice parameters. To maintain the self-consistency, **all parameters changed in the main function should have a pre-defined key in the default sets**.
 
 The sentence 
 
@@ -107,10 +107,26 @@ field_paras['importfield']  =   0
 beam_paras['importbeam']    =   0
 ```
 
-defines whether or not to import the beam(1=yes, 0=no). For instance, you can write both the ```&beam``` and ```&importbeam``` name list in ```Inputfile_make()```. For the first period, set ```beam_paras['importbeam']=0 ``` so that the ```&beam``` will be written in the inputfile, to start the simulation from a pre-determined beam set. For the following periods, set ```beam_paras['importbeam']=1``` and use correct path ```beam_paras['importbeam_filename']``` to import the results from previous pass. 
+defines whether or not to import the beam(1=yes, 0=no). For instance, you can write both the ```&beam``` and ```&importbeam``` name list in ```Inputfile_make()```. This setting is used for period-by-period simulation. For the first period, set ```beam_paras['importbeam']=0 ``` so that the ```&beam``` namelist will be written in the inputfile, starting the simulation from a pre-determined beam set. For the following periods, set ```beam_paras['importbeam']=1``` and use correct path ```beam_paras['importbeam_filename']``` to import the results from previous pass, under which condition the ```&beam``` namelist will not be written. 
+
+Once the main body is set, use 
+
+```asm
+os.system(genesispath + "genesis4 "+  input_filename)
+```
+
+to run genesis simulation, where ```genesispath``` is the installation path and ```input_filename``` is your input file name. If you find some errors in running the python script, path might be the problem. Writing all paths explicitly like "/bin/python3 /mnt/x/WSL/XXX.py" works well for me.
+
+You can call ```Database_save()``` to save all the simulated parameters. The timestamp, all input and lattice file parameters will be saved for future references. 
+
+To save the output results, edit
+
+```asm
+out_dict = {'key':value}
+```
+
+where key is the parameters' name and value is the data to save. Then call ```Output_save(output_filename,out_dict)``` to save your out_dict in output_filename. All the data in out_dict should share the same length otherwise there will be an error. The output file is a .csv file. 
+ 
 
 
-
-
-If you find some errors in finding dictionaries, path is the problem. Writing all paths explicitly like "/bin/python3 /mnt/x/WSL/XXX.py" works well for me.
 
