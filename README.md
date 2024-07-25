@@ -53,13 +53,64 @@ To use the MR optimizer, call ```YGPT_file.opt()``` and ```YGPT_file.output_opt(
 
 # 2. Python-Genesis
 
-We use the interface to run Genesis, specifically for tapering undulator. To achieve this goal, we want to run the undulator simulation one period by one period. The beama dn field profile will be directly imported by the following period, while the ```aw``` and ```gamma0``` will be calculated according to the output and sent to next period. 
+## 2.1 Genesis installation
 
-To start the simulation, use ```Default_input_paras()``` and ```Default_lattice_paras()``` to write the default parameters for input and lattice file, respectively. Then call ```Inputfile_make()``` to make the input file. You can write the beamline in ```Lattice_compile()```, for example
+This interface is validated by Genesis installed on Windows Subsystem for Linux (WSL) by Microsoft. Other choice can be environment like Cygwin. Before you use, you should make sure your Genersis works well in the Linux system. Genesis will not work on Windows system. See https://learn.microsoft.com/zh-cn/windows/wsl/install for the installation of WSL. Then you should install the following packages before compiling Genesis:
+
+```asm
+sudo apt-get install build-essential
+sudo apt-get install cmake
+sudo apt-get install git
+sudo apt-get install libopenmpi-dev
+sudo apt-get install libhdf5-openmpi-dev
+sudo apt-get install pkg-config
+```
+Download files from https://github.com/ZeugAusHH/Genesis-1.3-Version4 and follow the instructions to build Genesis. 
+
+Please make sure the cross-talk between Windows and WSL is usable. For example, if you are developing your source code through VScode, then you can simply search the official WSL extension from Microsoft for cross-talk purpose. When you run this interface in the WSL mode(by clicking the bottom left corner in your VScode), your hardrives will be loaded very similar to a remote server and you can find your file under some specific dictionary path(for example, /mnt/D/ in WSL is your D:/ drive).
+
+## Run simulations
+We use the interface to run Genesis, specifically for tapering undulator. To achieve this goal, we want to run the undulator simulation one period by one period. The beam and field profile will be directly imported by the following period, while the ```aw``` and ```gamma0``` will be calculated according to the output and sent to next period. 
+
+To start the simulation, use ```Default_input_paras()``` and ```Default_lattice_paras()``` to write the default parameters for input and lattice file, respectively. For example,  
+
+```
+setup_default_paras['lambda0'] = 3.3e-6
+setup_default_paras['gamma0']   =   146.771
+```
+
+Then call ```Inputfile_make()``` to make the input file. You can write the beamline in ```Lattice_compile()```, for example
 
 ```asm
 lattice_elements['UND'] = "UNDULATOR={lambdau=%f,nwig=%d,aw=%f,helical=%s}"%(beamline_input_paras['UND_lambdau'],beamline_input_paras['UND_nwig'],beamline_input_paras['UND_aw'],beamline_input_paras['UND_helical'])
 ```
 
 defines an undulator with label 'UND'. After finishing this, use ```Latticefile_make()``` to make the lattice file.  
+
+Go tot the main function. You should write down all the paths first. Then you can define your parameters. You can change parameters in the main function, while the ones not mentioned will be your default number. To maintain the self-consistency, all parameters changed here should have a valid key in the default sets. Otherwise, the update will not be excuted. For example, you write 
+
+```asm
+setup_paras = {}
+lattice_paras = {} 
+field_paras = {}
+beam_paras = {}
+setup_default_paras['lambda0'] = 5e-6
+inputfile_input_paras = Inputfile_make(input_filename,setup_paras,lattice_paras,field_paras,beam_paras)
+```
+
+Then the ```lambda0``` value will be updated to 5e-6. Other parameters like ```gamma0``` not mentioned in the main function will keep the value as 146.771. The empty dictionary lattice_paras{} or so gives no updated to the default lattice parameters. 
+
+The sentence 
+
+```asm
+field_paras['importfield']  =   0
+beam_paras['importbeam']    =   0
+```
+
+defines whether or not to import the beam(1=yes, 0=no). For instance, you can write both the ```&beam``` and ```&importbeam``` name list in ```Inputfile_make()```. For the first period, set ```beam_paras['importbeam']=0 ``` so that the ```&beam``` will be written in the inputfile, to start the simulation from a pre-determined beam set. For the following periods, set ```beam_paras['importbeam']=1``` and use correct path ```beam_paras['importbeam_filename']``` to import the results from previous pass. 
+
+
+
+
+If you find some errors in finding dictionaries, path is the problem. Writing all paths explicitly like "/bin/python3 /mnt/x/WSL/XXX.py" works well for me.
 
