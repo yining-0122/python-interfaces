@@ -69,7 +69,7 @@ Download files from https://github.com/ZeugAusHH/Genesis-1.3-Version4 and follow
 
 Please make sure the cross-talk between Windows and WSL is usable. For example, if you are developing your source code through VScode, then you can simply search the official WSL extension from Microsoft for cross-talk purpose. When you run this interface in the WSL mode(by clicking the bottom left corner in your VScode), your hardrives will be loaded very similar to a remote server and you can find your file under some specific dictionary path(for example, /mnt/D/ in WSL is your D:/ drive).
 
-## Run simulations
+## 2.2 Run simulations
 We use the interface to run Genesis, specifically for tapering undulator. To achieve this goal, we want to run the undulator simulation one period by one period. The beam and field profile will be directly imported by the following period, while the ```aw``` and ```gamma0``` will be calculated according to the output and sent to next period. 
 
 To start the simulation, use ```Default_input_paras()``` and ```Default_lattice_paras()``` to write the default parameters for input and lattice file, respectively. For example,  
