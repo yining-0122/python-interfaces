@@ -330,26 +330,16 @@ class YGPT_file(object): # Methods for making input files.
         beamline_element['Gun'] = 'map1D_TM("wcs","z",gun_z, "TAG_Ez.gdf", "z", "Ez", GunPowerFac, GunPhase,w);'
         beamline_element['iris1'] = 'rmax("wcs","z",iris1_z,0.002,iris1_open);'
         beamline_element['backscatter'] = 'zminmax("wcs","z",0,0,100000);' 
-        beamline_element['alphamagnet'] = 'alphamagnet("wcs",0,0,alpha_z,cos(angle_radius),0,-sin(angle_radius),0,1,0,length,width,gradient,n);'
-        beamline_element['transfer'] = 'ccs("wcs",0,0,alpha_z-length/(2*cos(angle_radius)),cos(2*angle_radius),0,-sin(2*angle_radius),0,-1,0,"bend");'
-        beamline_element['flip'] = 'ccsflip("wcs",-0.02,0,0,cos(2*angle_radius),0,-sin(2*angle_radius),0,-1,0,"bend");'
-        beamline_element['iris2'] = 'rmax("bend",iris2_x,0,iris2_z,1,0,0,0,1,0,0.005,iris2_open);'
         beamline_element['linac'] = 'map1D_TM("bend", "z", linac_z, "ftlinac.gdf", "z", "Ez", linac_powerfac, linac_phaserad, linac_omega);'
         beamline_element['chicane'] = 'rectmagnet("bend","z",dipole1_z,dipole_width,dipole_length,dipole_field,dipole_dl,dipole_b1,dipole_b2);\
             \nrectmagnet("bend","z",dipole2_z,dipole_width,dipole_length,-dipole_field,dipole_dl,dipole_b1,dipole_b2);\
             \nrectmagnet("bend","z",dipole3_z,dipole_width,dipole_length,-dipole_field,dipole_dl,dipole_b1,dipole_b2);\
             \nrectmagnet("bend","z",dipole4_z,dipole_width,dipole_length,dipole_field,dipole_dl,dipole_b1,dipole_b2);'
-
-       
         beamline_element['triplet'] = 'quadrupole("bend", "z", quad1_z, bluequad_Leff, -quad1_current*bluequad_GvsI, bluequad_b);\
                 \nquadrupole("bend", "z", quad2_z, bluequad_Leff, -quad2_current*bluequad_GvsI, bluequad_b);\
                 \nquadrupole("bend", "z", quad3_z, bluequad_Leff, -quad3_current*bluequad_GvsI, bluequad_b);'
         beamline_element['remove_particle'] = 'stdxyzmax(5,5,5);\nGminmax("bend",0,0,undulator_z-0.7,0,1,0,-1,0,0,0.1,19.5,100); ' #
-
         beamline_element['sol'] = 'bzsolenoid("bend", "z", sol1_z, sol1_R, sol1_L, sol1_nI);'
-        beamline_element['undulator'] = 'quadratic_TESSAund("bend",0,0,undulator_z,0,1,0,-1,0,0,und_nperiods,und_lamu,und_B0,0.25,0.75,und_taperdelay,und_taper1,und_taper2);'
-        #beamline_element['waveguide'] = 'CircularWGMC_noloss("bend","z", undulator_z, und_radius, und_length, fmin, fmax, Nfreq, 0, 50e-6, 0.1*und_f0, 1, 0, ""); '
-        beamline_element['waveguide'] = 'CircularWG_noloss_seeded("bend","z", undulator_z, und_radius, und_length, fmin, fmax, Nfreq, 30*0.84*8, -100e-6, 0.1*und_f0, 1, 0, "","prepass.gdf",1.3e12,1.6e12); '#86*0.99
         beamline_element['tmax'] = 'tmax=20*60;'
         beamline_element['dtmin'] = 'dtmin=1e-14;'
         beamline_element['before_alpha'] = 'tout(2.2e-9,2.9e-9,0.05e-9,"wcs");'
@@ -375,13 +365,6 @@ class YGPT_file(object): # Methods for making input files.
         element_para['GunPowerFac']     = 1.45
         element_para['GunPhase']        = 22/180*np.pi
         element_para['w']               = 2*np.pi*2856e6
-
-        element_para['length']          = 0.5
-        element_para['width']           = 0.66
-        element_para['gradient']        = 2.5
-        element_para['n']               = 1
-        element_para['angle']           = 40.71
-        element_para['angle_radius']    = element_para['angle']/180*np.pi
 
         element_para['iris1_open']      = 0.05
         element_para['iris2_open']      = 0.05
@@ -436,23 +419,7 @@ class YGPT_file(object): # Methods for making input files.
         element_para['sol1_fac']    	= element_para['sol1_current']*element_para['sol1_mcoeff'] + element_para['sol1_bcoeff'];
         element_para['sol1_nI'] 	    = np.sqrt( element_para['sol1_L']*element_para['sol1_L'] + 4*element_para['sol1_R']*element_para['sol1_R'] )/element_para['sol1_L']/mu0*element_para['sol1_fac'];
 
-        # Undulator
-        element_para['undulator_z']     = 1.8+0.5;
-        element_para['und_lamu'] 	    = 0.032;
-        element_para['und_nperiods'] 	= 30;
-        element_para['und_B0'] 		    = 0.65;     #0.74 for K=2.2 #0.6 for K=1.8 #0.5 for K=1.5 #0.65 for 1.9,1500GHz 
-        element_para['und_taperdelay'] 	= 0.06; #0.06
-        element_para['und_taper1'] 	    = -0.0; # -0.09
-        element_para['und_taper2'] 	    = -0.0; # -0.3
-        element_para['und_radius'] 	    = 4e-3/2;
-        element_para['und_f0'] 		    = 0.110e12; #0.11e12
-        element_para['und_length']      = element_para['und_lamu']*element_para['und_nperiods']
-        # Waveguide
-        element_para['Nfreq'] 	        = 210;
-        element_para['fmin'] 	        = 50e9; #50e9
-        element_para['fmax'] 	        = 2950e9;
-
-
+ 
         with open("element_para.in",'w+') as file: 
             for key,value in element_para.items():
                 file.write("%s \t= \t%s;\n"%(str(key),str(value)))
@@ -880,9 +847,6 @@ beamline_onoff = {}
 beamline_onoff['Gun']           = 'off'
 beamline_onoff['iris1']         = 'on'
 beamline_onoff['backscatter']   = 'on'
-beamline_onoff['alphamagnet']   = 'on'
-beamline_onoff['transfer']      = 'on'
-beamline_onoff['flip']          = 'on'
 
 beamline_onoff['iris2']         = 'off'
 beamline_onoff['remove_particle']= 'on'
@@ -892,8 +856,6 @@ beamline_onoff['triplet']       = 'on'
 beamline_onoff['chicane']       = 'on'
 
 beamline_onoff['sol']           = 'off'
-beamline_onoff['undulator']     = 'on'
-beamline_onoff['waveguide']     = 'on'
 beamline_onoff['tmax']          = 'on'
 beamline_onoff['dtmin']         = 'on'
 beamline_onoff['spacecharge']   = 'on'
